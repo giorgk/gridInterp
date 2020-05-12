@@ -252,18 +252,35 @@ namespace GRID_INTERP{
     }
 
 
-
+    /**
+     * @brief This is a container class for the values.
+     * 
+     * When this object is constructed is empty. To start filling it with values
+     * it has to be first resized using the #resize method.
+     * After the class is resized it can be filled with values using the only set method
+     */
     class GridValues{
     public:
+        //! Empty constructor 
         GridValues(){};
+        //! access operator in 3D 
         double& operator()(int l, int r, int c);
+        //! access operator in 2D
         double& operator()(int r, int c);
+        //! access operator in 1D 
         double& operator()(int c);
+        //! resize the data array. Unlike the usual usage of resize function in vector
+        //! the resize will discard any existing data first 
         void resize(int nl, int nr, int nc);
+        // sets the value of the l layer, r row and c column with the value v_in
         void set(int l, int r, int c, double v_in);
+        //! Deletes the data of the object bringing it int the state to recieve otehr data
         void reset();
+        //! returns the number of columns or values in the x direction
         int nx();
+        //! returns the number of rows or values in the y direction
         int ny();
+        //! returns the number of layers or values in the z direction
         int nz();
     private:
         std::vector<std::vector<std::vector<double>>> v;
@@ -302,27 +319,90 @@ namespace GRID_INTERP{
         return v.size();
     }
 
+    /**
+     * @brief Main interpolation class.
+     * 
+     * This is a templated class where the dimention is the template parameter
+     * 
+     * @tparam dim is the dimension of the interpolation
+     */
     template<int dim>
     class interp{
     public:
+        // The constructor resets everything and allocates space for the axis.
         interp();
+        //! This is the method to call to carry out the interpolation
+        //! you have to pass as many coordinates are needed.
         double interpolate(double x, double y = 0, double z = 0);
+        /**
+         * @brief Set the Axis object
+         * 
+         * THis method is used when the ticks are not evenly spaced
+         * 
+         * @param idim is the index of the dimension. For the x, y and z this is 0,1 and 2 repsectively 
+         * @param x_in the vector with the coordinates of the ticks
+         */
         void setAxis(int idim, std::vector<double> &x_in);
+        /**
+         * @brief Set the Axis object when the ticks are evenly spaced
+         * 
+         * @param idim is the dimension index of the axis to set
+         * @param origin_in is the starting point of the idim axis
+         * @param dx_in is the space between the ticks
+         * @param n the number of ticks in the idim axis
+         */
         void setAxis(int idim, double origin_in, double dx_in, int n);
+        //! sets the mode and the method
         void setModeMethod(MODE mode_in, METHOD method_in);
+
+        /**
+         * @brief Get the Data From File object
+         * 
+         * The data must be in the following format
+         * 
+         * 1st line:
+         * MODE METHOD NX NY NZ
+         * in case of 1 or 2D only NX or NX and NY are needed
+         * 
+         * 2nd line:
+         * axisFileX axisFileY axisFileZ
+         * This is a list of files that define the options for the 
+         * X Y and Z axis.
+         * 
+         * For 1D repeat NX lines the values. 
+         * 
+         * For 2D repeat NY lines where each line containts NX values
+         * 
+         * For 3D repeat NZ times the NY x NX data.
+         * 
+         * Note that the number of values must be consistent with the number 
+         * of axis values depending the selected MODE.
+         * 
+         * @param filename 
+         */
         void getDataFromFile(std::string filename);
+        //! Resets the class to the empty state.
         void reset();
 
     private:
+        //! A vector of axis objects
         std::vector<axis> a;
+        //! The container for the values that are used in the interpolation
         GridValues v;
+        //! In 3D this holds the layer elevation information
         GridValues elev;
+        //! This is the interpolation mode
         MODE mode = MODE::INVALID_MODE;
+        //! THis holds the interpolation method
         METHOD method = METHOD::INVALID_METHOD;
+        //! The interpolate method will call this when dim is 1
         double interp1D(double x);
+        //! The interpolate method will call this when dim is 2
         double interp2D(double x, double y);
+        //! The interpolate method will call this when dim is 2
         double interp3D(double x, double y, double z);
-
+        //! A utility method which is used in MODE::CELL and METHOD::LINEAR
+        //! Finds the correct cells to interpolate the value for the given input
         void cellLinearcorrect(int idim, double x, int &i1, int &i2, double &x1, double &x2);
     };
 
@@ -337,6 +417,7 @@ namespace GRID_INTERP{
         for(int idim = 0; idim < dim; ++ idim)
             a[idim].reset();
         v.reset();
+        elev.reset();
         mode = MODE::INVALID_MODE;
         method = METHOD::INVALID_METHOD;
     }
@@ -763,599 +844,7 @@ namespace GRID_INTERP{
         }
     }
 
-
-
-    // /**
-    //  * @brief interp1D is the class that it is used for 1D interpolation 
-    //  * and for holding information for the axis for the higher dimension interpolations
-    //  * 
-    //  */
-    // class interp1D{
-    // public:
-    //     //! This is a empty constructor 
-    //     interp1D(){};
-    //     /**
-    //      * @brief Populates the positional vector. This is usefull when the space between
-    //      * the interpolated is constant.
-    //      * 
-    //      * Starting from the Coordinate origin will add N times dx. 
-    //      * For example setX(0,50, 11) will populate the vector x with the following numbers
-    //      * 0 50 100 150 200 250 300 350 400 450 500
-    //      * 
-    //      * @param origin The starting coordinate. This corresponds to x[0]
-    //      * @param dx the cell size
-    //      * @param N The number of cells + 1. If the MODE is POINT then N is the number of ticks.
-    //      * if MODE is CELL then N should be ncells + 1
-    //      */
-    //     void setX(double origin, double dx, int N);
-
-    //     /**
-    //      * @brief This simply sets the interpolation x vector equal to the input vector 
-    //      * 
-    //      * @param x_in 
-    //      */
-    //     void setX(std::vector<double> &x_in);
-    //     /**
-    //      * @brief This sets the values of the interpolation vector. 
-    //      * It is the responsibility of the user to make sure that the inputs of X match the ones of the V and the methos type etc.
-    //      * 
-    //      * @param v_in 
-    //      */
-    //     void setV(std::vector<double> &v_in);
-    //     void setModeMethod(MODE mode_in, METHOD method_in);
-    //     double interpolate(double x_in);
-    //     void findIIT(double x_in, int &i1, int &i2, double &t);
-    //     void findIcell(double x_in, int &i);
-    //     void clear();
-    //     void dataFromFile(std::string filename);
-
-    // private:
-    //     std::vector<double> x;
-    //     std::vector<double> v;
-    //     MODE mode = MODE::INVALID_MODE;
-    //     METHOD method = METHOD::INVALID_METHOD;
-    //     int N;
-    //     void findCell(int &i, int &ii, double x);
-    //     bool isvalidated  = false;
-    //     bool validateInputs();
-    //     bool xConst = false;
-    //     double dx = 0.0;
-    //     double origin = 0.0;
-
-    // };
-
-    // void interp1D::clear(){
-    //     x.clear();
-    //     v.clear();
-    //     mode = MODE::INVALID_MODE;
-    //     method = METHOD::INVALID_METHOD;
-    //     N = 0; 
-    //     isvalidated = false;
-    //     xConst = false;
-    //     dx = 0.0;
-    //     origin = 0.0;
-    // }
-
-    // void interp1D::setX(double origin_in, double dx_in, int n){
-    //     isvalidated = false;
-    //     x.clear();
-    //     for(int i = 0; i < n; i++){
-    //         x.push_back(origin_in + static_cast<double>(i)*dx_in);
-    //     }
-    //     xConst = true;
-    //     origin = origin_in;
-    //     dx = dx_in;
-    // }
-    // void interp1D::setX(std::vector<double> &x_in){
-    //     isvalidated = false;
-    //     xConst = false;
-    //     x = x_in;
-    // }
-
-    // void interp1D::setV(std::vector<double> &v_in){
-    //     isvalidated = false;
-    //     v = v_in;
-    // }
-
-    // void interp1D::setModeMethod(MODE mode_in, METHOD method_in){
-    //     isvalidated = false;
-    //     mode = mode_in;
-    //     method = method_in;
-    // }
-
-    // double interp1D::interpolate(double x_in){
-    //     if (!isvalidated){
-    //         isvalidated = validateInputs();
-    //         if (!isvalidated)
-    //             return std::numeric_limits<double>::quiet_NaN();
-    //     }
-    //     if (x_in < x[0])
-    //         return v[0];
-    //     else if (x_in > x[x.size()-1])
-    //         return v[v.size()-1];
-    //     else{
-    //         int i1  = 0;
-    //         int i2 = N;
-    //         findCell(i1, i2, x_in);
-    //         switch (mode)
-    //         {
-    //         case MODE::POINT:
-    //             switch (method)
-    //             {
-    //             case METHOD::LINEAR:
-    //                 {
-    //                 double t = (x_in - x[i1])/(x[i2] - x[i1]);
-    //                 return v[i1]*(1-t) + v[i2]*t;
-    //                 }
-    //                 break;
-    //             case METHOD::NEAREST:
-    //                 {
-    //                 if (std::abs(x[i1] - x_in) <= std::abs(x[i2] - x_in))
-    //                     return v[i1];
-    //                 else
-    //                     return v[i2];
-    //                 }
-    //                 break;
-    //             default:
-    //                 return std::numeric_limits<double>::quiet_NaN();
-    //                 break;
-    //             }
-    //             break;
-
-    //         case MODE::CELL:
-    //             switch (method)
-    //             {
-    //             case METHOD::LINEAR:
-    //                 {
-    //                 double midx = 0.5*( x[i1] + x[i2] );
-    //                 double x1, x2;
-    //                 if (x_in < midx){
-    //                     x2 = midx;
-    //                     if (i1 != 0)
-    //                         x1 = 0.5*(x[i1 - 1] + x[i1]);
-    //                     else
-    //                         return v[0];
-                        
-    //                     double t = (x_in - x1)/(x2 - x1);
-    //                     return v[i1-1]*(1-t) + v[i1]*t;
-    //                 }
-    //                 else{
-    //                     x1 = midx;
-    //                     if (i2 != N)
-    //                         x2 = 0.5*(x[i2] + x[i2 + 1]);
-    //                     else
-    //                         return v[v.size()-1];
-
-    //                     double t = (x_in - x1)/(x2 - x1);
-    //                     return v[i1]*(1-t) + v[i2]*t;
-    //                 }
-    //                 }
-    //                 break;
-    //             case METHOD::NEAREST:
-    //                 return v[i1];
-    //                 break;
-    //             default:
-    //                 return std::numeric_limits<double>::quiet_NaN();
-    //                 break;
-    //             }
-    //             break;
-    //         default:
-    //             return std::numeric_limits<double>::quiet_NaN();
-    //             break;
-    //         }
-    //     }
-    // }
-
-    // void interp1D::findCell(int &i, int &ii, double x_in){
-    //     switch (xConst)
-    //     {
-    //     case true:
-    //         {
-    //             i = static_cast<int>((x_in - origin)/dx);
-    //             ii = i + 1;
-    //         }
-    //         break;
-    //     default:
-    //         {
-    //             int mid = (i + ii)/2;
-    //             if (x_in <= x[mid])
-    //                 ii = mid;
-    //             else
-    //                 i = mid;
-                
-    //             if (ii - i <= 1)
-    //                 return;
-    //             else
-    //                 findCell(i, ii, x_in);
-    //         }
-    //         break;
-    //     }
-    // }
-
-    // bool interp1D::validateInputs(){
-    //     if (method == METHOD::INVALID_METHOD){
-    //         std::cout << "The interpolation method is invalid" << std::endl;
-    //         return false;
-    //     }
-    //     if (mode == MODE::INVALID_MODE){
-    //         std::cout << "THe interpolation mode is invalid" << std::endl;
-    //         return false;
-    //     }
-    //     if (mode == MODE::POINT && x.size() == v.size()){
-    //         N = x.size()-1;
-    //         return true;
-    //     }
-    //     if (mode == MODE::CELL && x.size() == v.size()+1){
-    //         N = x.size()-1;
-    //         return true;
-    //     }
-    //     std::cout << "The size of x is " << x.size() << " and the size of v is " <<  v.size() 
-    //               << " which are not compatible with the selected MODE: " << mode <<  std::endl;
-    //     return false;
-    // }
-
-    // void interp1D::findIIT(double x_in, int &i1, int &i2, double &t){
-    //     if (x_in < x[0]){
-    //         i1 = 0;
-    //         i2 = 0;
-    //         t = 0.0;
-    //         return;
-    //     }
-    //     if (x_in > x[x.size()-1]){
-    //         i1 = N;
-    //         i2 = N;
-    //         t = 1.0;
-    //         return;
-    //     }
-    //     i1  = 0;
-    //     i2 = N;
-    //     findCell(i1, i2, x_in);
-    //     t = (x_in - x[i1])/(x[i2] - x[i1]);
-    // }
-
-    // void interp1D::findIcell(double x_in, int &i){
-    //     if (x_in < x[0]){
-    //         i = 0;
-    //         return;
-    //     }
-    //     if (x_in > x[x.size()-1]){
-    //         i = N;
-    //         return;
-    //     }
-    //     int i1  = 0;
-    //     int i2 = N;
-    //     findCell(i1, i2, x_in);
-    //     i = i1;
-    // }
-
-    // void interp1D::dataFromFile(std::string filename){
-    //     std::ifstream datafile(filename.c_str());
-    //     if (!datafile.good()) {
-    //         std::cout << "Can't open the file" << filename << std::endl;
-    //     }
-    //     else{
-    //         MODE md;
-    //         METHOD mthd;
-    //         std::string line, tmp;
-    //         bool isConstant;
-    //         int has_values;
-    //         getline(datafile, line);
-    //         {
-    //             std::istringstream inp(line.c_str());
-    //             // Get mode
-    //             inp >> tmp;
-    //             if (tmp.compare("POINT") == 0)
-    //                 md = MODE::POINT;
-    //             else if (tmp.compare("CELL") == 0)
-    //                 md = MODE::CELL;
-    //             else
-    //                 md = MODE::INVALID_MODE;
-
-    //             //get method
-    //             inp >> tmp;
-    //             if (tmp.compare("LINEAR") == 0)
-    //                 mthd = METHOD::LINEAR;
-    //             else if (tmp.compare("NEAREST") == 0)
-    //                 mthd = METHOD::NEAREST;
-    //             else
-    //                 mthd = METHOD::INVALID_METHOD; 
-
-    //             inp >> tmp;
-                
-    //             if (tmp.compare("CONST") == 0)
-    //                 isConstant = true;
-    //             else
-    //                 isConstant = false;
-
-    //             inp >> has_values;
-    //         }
-            
-    //         int N;
-    //         double origin, dx;
-    //         {
-    //             getline(datafile, line);
-    //             std::istringstream inp(line.c_str());
-    //             if (isConstant){
-    //                 inp >> origin;
-    //                 inp >> dx;
-    //                 inp >> N;
-    //             }
-    //             else{
-    //                 inp >> N;
-    //             }
-    //         }
-            
-    //         std::vector<double> x,v;
-    //         double vv, xx;
-    //         if (!(has_values == 0 && isConstant)){
-    //             for (int i = 0; i < N; i++){
-    //                 getline(datafile, line);
-    //                 std::istringstream inp(line.c_str());
-    //                 if (isConstant){
-    //                     inp >> vv;
-    //                     v.push_back(vv); 
-    //                 }
-    //                 else{
-    //                     inp >> xx;
-    //                     x.push_back(xx);
-    //                     if (has_values == 1){
-    //                         inp >> vv;
-    //                         v.push_back(vv);
-    //                     }
-    //                 }
-    //             }
-    //             if (md == MODE::CELL && !isConstant){
-    //                 getline(datafile, line);
-    //                 std::istringstream inp(line.c_str());
-    //                 inp >> xx;
-    //                 x.push_back(xx);
-    //             }
-    //         }
-    //         if (isConstant){
-    //             if (md == MODE::POINT)
-    //                 setX(origin, dx, N);
-    //             else if (md == MODE::CELL)
-    //                 setX(origin, dx, N+1);
-    //         }
-    //         else{
-    //             setX(x);
-    //         }
-    //         if (has_values == 1)
-    //             setV(v);
-    //         setModeMethod(md, mthd);
-    //     }
-    // }
-
-
-
-/*
-    class interp2D{
-    public:
-        interp2D(){}
-
-        void setXY(std::vector<double> &x, std::vector<double> &y);
-        void setXY(double xo, double yo, double dx, double dy, int nx, int ny);
-        void setV(std::vector<std::vector<double>> &V_in);
-        void setModeMethod(MODE mode_in, METHOD method_in);
-        double interpolate(double x_in, double y_in);
-
-
-    private:
-        interp1D X;
-        interp1D Y;
-        std::vector<std::vector<double>> V;
-        MODE mode = MODE::INVALID_MODE;
-        METHOD method = METHOD::INVALID_METHOD;
-        bool validateInputs();
-        bool isvalidated = false;
-    };
-
-    void interp2D::setXY(std::vector<double> &x, std::vector<double> &y){
-        X.setX(x);
-        Y.setX(y);
-    }
-
-    void interp2D::setXY(double xo, double yo, double dx, double dy, int nx, int ny){
-        X.setX(xo, dx, nx);
-        Y.setX(yo, dy, ny);
-    }
-
-    void interp2D::setV(std::vector<std::vector<double>> &V_in){
-        V =V_in;
-    }
-
-    void interp2D::setModeMethod(MODE mode_in, METHOD method_in){
-        X.setModeMethod(mode_in, method_in);
-        Y.setModeMethod(mode_in, method_in);
-        mode = mode_in;
-        method = method_in;
-    }
-
-    double interp2D::interpolate(double x_in, double y_in){
-        if (!isvalidated){
-            isvalidated = validateInputs();
-            if (!isvalidated)
-                return std::numeric_limits<double>::quiet_NaN();
-        }
-        int j1 = 0, j2 = 0, i1 = 0, i2 = 0;
-        double tx = 0.0, ty = 0.0;
-        X.findIIT(x_in, j1, j2, tx);
-        Y.findIIT(y_in, i1, i2, ty);
-
-        switch (mode)
-        {
-        case MODE::POINT:
-            switch (method)
-            {
-            case METHOD::LINEAR:
-                {
-                    
-                }
-                break;
-            case METHOD::NEAREST:
-                {
-
-                }
-                break;
-            default:
-                return std::numeric_limits<double>::quiet_NaN();
-                break;
-            }
-            break;
-        case MODE::CELL:
-            switch (method)
-            {
-            case METHOD::LINEAR:
-                {
-                    
-                }
-                break;
-            case METHOD::NEAREST:
-                {
-
-                }
-                break;
-            default:
-                return std::numeric_limits<double>::quiet_NaN();
-                break;
-            }
-            break;
-        default:
-            return std::numeric_limits<double>::quiet_NaN();
-            break;
-        }
-        return 0.0;
-    }
-
-    
-
-
-
-
-
-
-
-
-    template<int dim>
-    class interp{
-    public:
-        interp();
-
-        void print();
-
-
-    };
-
-
-    template<int dim>
-    interp<dim>::interp(){
-
-    }
-
-    template<int dim>
-    void interp<dim>::print(){
-        std::cout << "Interp Print" << std::endl;
-    }
-*/
-    
-    // void readData1D(std::string filename, interp1D &D){
-    //     std::ifstream datafile(filename.c_str());
-    //     if (!datafile.good()) {
-    //         std::cout << "Can't open the file" << filename << std::endl;
-    //     }
-    //     else{
-    //         MODE md;
-    //         METHOD mthd;
-    //         std::string line, tmp;
-    //         bool isConstant;
-    //         int has_values;
-    //         getline(datafile, line);
-    //         {
-    //             std::istringstream inp(line.c_str());
-    //             // Get mode
-    //             inp >> tmp;
-    //             if (tmp.compare("POINT") == 0)
-    //                 md = MODE::POINT;
-    //             else if (tmp.compare("CELL") == 0)
-    //                 md = MODE::CELL;
-    //             else
-    //                 md = MODE::INVALID_MODE;
-
-    //             //get method
-    //             inp >> tmp;
-    //             if (tmp.compare("LINEAR") == 0)
-    //                 mthd = METHOD::LINEAR;
-    //             else if (tmp.compare("NEAREST") == 0)
-    //                 mthd = METHOD::NEAREST;
-    //             else
-    //                 mthd = METHOD::INVALID_METHOD; 
-
-    //             inp >> tmp;
-                
-    //             if (tmp.compare("CONST") == 0)
-    //                 isConstant = true;
-    //             else
-    //                 isConstant = false;
-
-    //             inp >> has_values;
-    //         }
-            
-    //         int N;
-    //         double origin, dx;
-    //         {
-    //             getline(datafile, line);
-    //             std::istringstream inp(line.c_str());
-    //             if (isConstant){
-    //                 inp >> origin;
-    //                 inp >> dx;
-    //                 inp >> N;
-    //             }
-    //             else{
-    //                 inp >> N;
-    //             }
-    //         }
-            
-    //         std::vector<double> x,v;
-    //         double vv, xx;
-    //         if (!(has_values == 0 && isConstant)){
-    //             for (int i = 0; i < N; i++){
-    //                 getline(datafile, line);
-    //                 std::istringstream inp(line.c_str());
-    //                 if (isConstant){
-    //                     inp >> vv;
-    //                     v.push_back(vv); 
-    //                 }
-    //                 else{
-    //                     inp >> xx;
-    //                     x.push_back(xx);
-    //                     if (has_values == 1){
-    //                         inp >> vv;
-    //                         v.push_back(vv);
-    //                     }
-    //                 }
-    //             }
-    //             if (md == MODE::CELL && !isConstant){
-    //                 getline(datafile, line);
-    //                 std::istringstream inp(line.c_str());
-    //                 inp >> xx;
-    //                 x.push_back(xx);
-    //             }
-    //         }
-    //         if (isConstant){
-    //             if (md == MODE::POINT)
-    //                 D.setX(origin, dx, N);
-    //             else if (md == MODE::CELL)
-    //                 D.setX(origin, dx, N+1);
-    //         }
-    //         else{
-    //             D.setX(x);
-    //         }
-    //         if (has_values == 1)
-    //             D.setV(v);
-    //         D.setModeMethod(md, mthd);
-    //     }
-    // }
-
+    //! This is a utility function which is used to print the results of the interpolation to a file so that it can be read in R forexample
     void writeCoordsValues(std::string filename, std::vector<std::vector<double>> &coords, std::vector<double> &v){
         std::ofstream out_file;
         out_file.open(filename.c_str());
