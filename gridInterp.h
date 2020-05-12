@@ -36,26 +36,86 @@ namespace GRID_INTERP{
      */
     enum TYPE{GRID, LAYER, INVALID_TYPE};
 
-
+    /**
+     * @brief An axis class is a container for axis tick values.
+     * 
+     * The tick values can have variable space or constant.
+     * If the space between the tick values is constant it is advantageous 
+     * to use the setAxis for constant ticks. 
+     * 
+     * An axis object is used to describe the location of the values during interpolation
+     * therefore the number of ticks must be consistent with the grid values.
+     * For the GRID_INTERP::MODE::POINT mode the number of ticks must be exaclty the number of values 
+     * For the GRID_INTERP::MODE::CELL mode the number of ticks is the number of values + 1
+     * 
+     */
     class axis{
     public:
+        //! The constructor does absolutely nothing
         axis(){};
+        /**
+         * @brief Set the Axis tick values when the space between them is constant 
+         * 
+         * @param origin is the starting value 
+         * @param dx is the space between the ticks
+         * @param N is the number of tick values to generate.
+         */
         void setAxis(double origin, double dx, int N);
+        /**
+         * @brief Set the Axis tick values with the input vector.
+         * This is used to set variable space grid data
+         * 
+         * @param x_in 
+         */
         void setAxis(std::vector<double> &x_in);
+        /**
+         * @brief Finds the lower and upper ids that enclose the input value x_in.
+         * Also returns the parametric value that correspons to x1
+         * 
+         * @param x_in is the query point
+         * @param i1 is the id of the lower limit
+         * @param i2 is the id of the upper limit
+         * @param t is the parametric value so that x_in = x[i1]*(1-t) + x[i2]*t
+         */
         void findIIT(double x_in, int &i1, int &i2, double &t);
+        //! so far this is not used so I might delete this
         void findIcell(double x_in, int &i);
-        void clear();
+        /**
+         * @brief Reads the axis data from file
+         * 
+         * The data are organized in the following format:
+         * 
+         * 1st line: DATA_FORMAT N
+         * 
+         * where DATA_FORMAT is either CONST or VAR and N is the number of ticks
+         * 
+         * If the DATA_FORMAT is CONST the second line consists of 2 numbers
+         * origin dx
+         * If the DATA_ORMAT is VAR then we read N lines where each line contains the values of the ticks
+         * 
+         * @param filename 
+         */
         void dataFromFile(std::string filename);
+        //! Delets all data and resest the axis object to its original state
         void reset();
+        //! accessor for the i element of the axis
         double& operator()(int i);
-        int n();
+        //! returns the index that access the last element of the tick values
+        //! If ax is an axis object then ax(ax.last()) is equal to ax.x[ax.x.size()-1]
+        int last();
 
     private:
+        //! is the vector that containts the tick values
         std::vector<double> x;
+        //! is the index of the last element
         int N = 0;
+        //! this is the origin of the grid. When the object is populated with variable data this is not used
         double origin = 0.0;
+        //! The distance between the ticks. This is used only for constant grid values
         double dx = 0.0;
+        //! This flag is set to true or false according to which setAxis method is used.
         bool bConst = false;
+        //! Finds cell searches the segment that containts the x. Is doing so by dividing into half and repeating it self
         void findCell(int &i, int &ii, double x);
     };
 
@@ -69,8 +129,8 @@ namespace GRID_INTERP{
     double& axis::operator()(int i){
         return x[i];
     }
-    int axis::n(){
-        return x.size();
+    int axis::last(){
+        return x.size()-1;
     }
 
     void axis::setAxis(double origin_in, double dx_in, int n){
@@ -122,7 +182,7 @@ namespace GRID_INTERP{
             t = 0.0;
             return;
         }
-        if (x_in > x[x.size()-1]){
+        if (x_in > x[N]){
             i1 = N;
             i2 = N;
             t = 1.0;
@@ -155,7 +215,7 @@ namespace GRID_INTERP{
             std::cout << "Can't open the file" << filename << std::endl;
         }
         else{
-            int N;
+            int Nticks;
             std::string line, tmp;
             getline(datafile, line);
             {
@@ -167,7 +227,7 @@ namespace GRID_INTERP{
                 else
                     bConst = false;
 
-                inp >> N;
+                inp >> Nticks;
             }
 
             if (bConst){
@@ -175,17 +235,18 @@ namespace GRID_INTERP{
                 std::istringstream inp(line.c_str());
                 inp >> origin;
                 inp >> dx;
-                setAxis(origin, dx, N);
+                setAxis(origin, dx, Nticks);
             }
             else{
                 x.clear();
                 double xx;
-                for (int i = 0; i < N; i++){
+                for (int i = 0; i < Nticks; i++){
                     getline(datafile, line);
                     std::istringstream inp(line.c_str());
                     inp >> xx;
                     x.push_back(xx);
                 }
+                N = x.size() - 1;
             }
         }
     }
@@ -361,24 +422,24 @@ namespace GRID_INTERP{
                 }
             }
             else{
-                int nlay = 1;
-                int nrow, ncol;
+                int nz = 1;
+                int ny, nx;
                 if (dim == 2){
-                    nrow = dims[0];
-                    ncol = dims[1];
+                    nx = dims[0];
+                    ny = dims[1];
                 }
                 else if (dim == 3){
-                    nlay = dims[0];
-                    nrow = dims[1];
-                    ncol = dims[2];
+                    nx = dims[0];
+                    ny = dims[1];
+                    nz = dims[2];
 
                 }
                 double vv;
-                for (int k = 0; k < nlay; ++k)
-                    for (int i = 0; i < nrow; ++i){
+                for (int k = 0; k < nz; ++k)
+                    for (int i = 0; i < ny; ++i){
                         getline(datafile, line);
                         std::istringstream inp(line.c_str());
-                        for (int j = 0; j < ncol; ++j){
+                        for (int j = 0; j < nx; ++j){
                             inp >> vv;
                             v.set(k, i, j, vv);
                         }
@@ -448,6 +509,8 @@ namespace GRID_INTERP{
                 }
                 break;
             case METHOD::NEAREST:
+                if (i1 >= v.nx())
+                    i1 = v.nx() - 1;
                 outcome = v(i1);
                 break;
             default:
@@ -465,10 +528,11 @@ namespace GRID_INTERP{
 
     template<int dim>
     double interp<dim>::interp2D(double x, double y){
+        double outcome;
         int i1, i2, j1, j2;
         double tx, ty;
-        a[0].findIIT(x,j1, j2, tx);
-        a[1]. findIIT(y, i1, i2, ty);
+        a[0].findIIT(x, j1, j2, tx);
+        a[1].findIIT(y, i1, i2, ty);
         switch (mode)
         {
         case MODE::POINT:
@@ -479,7 +543,7 @@ namespace GRID_INTERP{
                     {
                         double y1 = v(i1, j1)*(1-tx) + v(i1, j2)*tx;
                         double y2 = v(i2, j1)*(1-tx) + v(i2, j2)*tx;
-                        return y1*(1-ty) + y2*ty;
+                        outcome = y1*(1-ty) + y2*ty;
                         
                     }
                     break;
@@ -495,7 +559,7 @@ namespace GRID_INTERP{
                             i = i1;
                         else
                             i = i2;
-                        return v(i,j);
+                        outcome = v(i,j);
                     }
                     break;
                 default:
@@ -519,25 +583,29 @@ namespace GRID_INTERP{
                         // y1 y2 correspond to values here
                         y1 = v(i1, j1)*(1-tx) + v(i1, j2)*tx;
                         y2 = v(i2, j1)*(1-tx) + v(i2, j2)*tx;
-                        return y1*(1-ty) + y2*ty;
+                        outcome = y1*(1-ty) + y2*ty;
                     }
                     break;
                 case METHOD::NEAREST:
                     {
-                        return v(i1, j1);
+                        if (i1 >= v.ny())
+                            i1 = v.ny() - 1;
+                        if (j1 >= v.nx())
+                            j1 = v.nx() - 1;
+                        outcome = v(i1, j1);
                     }
                     break;
                 default:
-                    return std::numeric_limits<double>::quiet_NaN();
+                    outcome = std::numeric_limits<double>::quiet_NaN();
                     break;
                 }
             }
             break;
         default:
-            return std::numeric_limits<double>::quiet_NaN();
+            outcome = std::numeric_limits<double>::quiet_NaN();
             break;
         }
-        
+        return outcome;
     }
 
     template<int dim>
@@ -619,7 +687,13 @@ namespace GRID_INTERP{
                     }
                     break;
                 case METHOD::NEAREST:
-                    {
+                    {   
+                        if (k1 >= v.nz())
+                            k1 = v.nz() - 1;
+                        if (i1 >= v.ny())
+                            i1 = v.ny() - 1;
+                        if (j1 >= v.nx())
+                            j1 = v.nx() - 1;
                         return v(k1, i1, j1);
                     }
                     break;
@@ -644,7 +718,7 @@ namespace GRID_INTERP{
             x2 = 0.5*( a[idim](0) + a[idim](1) );
             return;
         }
-        if (x > a[idim](a[idim].n()-1)){
+        if (x > a[idim](a[idim].last())){
             if (idim == 0){
                 i1 = v.nx() - 1;
                 i2 = v.nx() - 1;
@@ -657,8 +731,8 @@ namespace GRID_INTERP{
                 i1 = v.nz() - 1;
                 i2 = v.nz() - 1;
             }
-            x1 = 0.5* ( a[idim](a[idim].n()-2) + a[idim](a[idim].n()-1) );
-            x2 = a[idim](a[idim].n()-1);
+            x1 = 0.5* ( a[idim](a[idim].last()-1) + a[idim](a[idim].last()) );
+            x2 = a[idim](a[idim].last());
             return;
         }
 
@@ -677,14 +751,14 @@ namespace GRID_INTERP{
         }
         else{
             x1 = midx;
-            if (i2 != a[idim].n()){
+            if (i2 != a[idim].last()){
                 x2 = 0.5*(a[idim](i2) + a[idim](i2 + 1));
                 //i1 = i2;
                 //i2 = i2 + 1;
             }
             else{
-                x2 = a[idim](a[idim].n() - 1);
-                i1 = i2;
+                x2 = a[idim](a[idim].last());
+                i2 = i1;
             }
         }
     }

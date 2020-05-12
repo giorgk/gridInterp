@@ -14,8 +14,7 @@ library(pracma)
   N <- 38
   writeAxis("test1_xaxis_const.tmp", c(orig, dx, N), "CONST")
   
-  xvar = 38.425 + cumsum(runif(n = 38,min = 0.3, max = 2))
-  writeAxis("test1_xaxis_var.tmp", xvar, "VAR")
+  
 }
 {# write data
   writeData("test1_data_p.tmp", data = y, mode = "POINT", "LINEAR", axisFiles = c("Rgridinterp/test1_xaxis_const.tmp"))
@@ -43,21 +42,17 @@ library(pracma)
 
 #=============== TEST 1D With variable X ===========
 {# Test function
-  x = 38.425 + cumsum(runif(n = 35,min = 0.3, max = 2))
+  xvar = 38.425 + cumsum(runif(n = 38,min = 0.3, max = 2))
   y <- sin(x/5.2)^3
 }
 
-{
-  writegridInterp1D(filename = "test1D_var_pl.tmp", x = x, v = y, 
-                    spacing = "VAR", mode = "POINT", method = "LINEAR")
-  writegridInterp1D(filename = "test1D_var_pn.tmp", x = x, v = y, 
-                    spacing = "VAR", mode = "POINT", method = "NEAREST")
-  # for CELL MODE the length of x is length(v) + 1
-  xx <- c(x, x[length(x)] + runif(n = 1,min = 0.3, max = 2) )
-  writegridInterp1D(filename = "test1D_var_cl.tmp", x = xx, v = y, 
-                    spacing = "VAR", mode = "CELL", method = "LINEAR")
-  writegridInterp1D(filename = "test1D_var_cn.tmp", x = xx, v = y, 
-                    spacing = "VAR", mode = "CELL", method = "NEAREST")
+{# write Axis
+  writeAxis("test1_xaxis_var.tmp", xvar, "VAR")
+}
+
+{# write data
+  writeData("test1_data_var_p.tmp", data = y, mode = "POINT", "LINEAR", axisFiles = c("Rgridinterp/test1_xaxis_var.tmp"))
+  writeData("test1_data_var_c.tmp", data = y[1:length(y)-1], mode = "CELL", "LINEAR", axisFiles = c("Rgridinterp/test1_xaxis_var.tmp"))
 }
 
 { # Read the results
@@ -69,38 +64,91 @@ library(pracma)
 
 {
   p <- plot_ly()
+  p <- add_trace(p, x = xvar, y = y , type = 'scatter', mode = 'lines+markers')
   p <- add_trace(p, x = tstpl$X, y = tstpl$Y , type = 'scatter', mode = 'lines')
   p <- add_trace(p, x = tstpn$X, y = tstpn$Y , type = 'scatter', mode = 'lines')
   p <- add_trace(p, x = tstcl$X, y = tstcl$Y , type = 'scatter', mode = 'lines')
   p <- add_trace(p, x = tstcn$X, y = tstcn$Y , type = 'scatter', mode = 'lines')
-  p <- add_trace(p, x = x, y = y , type = 'scatter', mode = 'lines+markers')
   p
 }
 
 #=============== TEST 2D With constant X, Y ===========
 {# test function
-  P <- peaks()
-  x <- P$X[1, ]
-  y <- P$Y[, 1]
+  N = 20
+  P <- peaks(v = N)
+  x <- 10*P$X[1, ]
+  y <- 10*P$Y[, 1]
 }
 
-{ # write files
-  # write the axis files
-  writegridInterp1D("XaxisTest2D.tmp", c(-3, 0.125, 49), "CONST", mode = "POINT", method = "LINEAR")
-  writegridInterp2D("Test2D_pl.tmp", xaxis = "XaxisTest2D.tmp", yaxis = "XaxisTest2D.tmp", v = P$Z,
-                    mode = "POINT", method = "LINEAR")
+{ # write axis
+  orig <- -30
+  dx <- diff(x)[1]
+  # For the peak example we will use the same ticks in both axis so we print one file
+  writeAxis("peakAxis_cnst.tmp", c(orig, dx, N), "CONST")
+}
+
+
+
+{ # write data
+  writeData("peak_data_cnst_p.tmp", data = P$Z, mode = "POINT", "LINEAR", 
+            axisFiles = c("Rgridinterp/peakAxis_cnst.tmp", "Rgridinterp/peakAxis_cnst.tmp"))
+}
+
+{# read the results
+  peakspl <- read.table("res_cnst_peak_pl.tmp", header = F, col.names = c("X", "Y", "Z"))
+  peakspn <- read.table("res_cnst_peak_pn.tmp", header = F, col.names = c("X", "Y", "Z"))
+  
+}
+
+{
+  p <- plot_ly()
+  p <- add_surface(p, x=x, y = y, z = P$Z)
+  p <- add_markers(p, x = peakspl$X, y = peakspl$Y, z = peakspl$Z, marker = list(size = 1))
+  p <- add_markers(p, x = peakspn$X, y = peakspn$Y, z = peakspn$Z, marker = list(size = 1))
+  p
+  
+}
+
+#=============== TEST 2D With variable X, Y ===========
+{# Test function
+  xvar <- -2 + cumsum(runif(n = 38,min = 0.03, max = 0.17))
+  yvar <- -1 + cumsum(runif(n = 20,min = 0.03, max = 0.15))
+  XYgrid <- meshgrid(xvar, yvar)
+  z <- (4 - 2.1*XYgrid$X^2 + (XYgrid$X^4)/3)*XYgrid$X^2 + XYgrid$X*XYgrid$Y + (-4 + 4*XYgrid$Y^2)*XYgrid$Y^2
+  
+  xvar <- 10*xvar
+  yvar <- 10*yvar
+}
+
+{ # write axis n data
+  writeAxis("test2D_Xvar.tmp", xvar, "VAR")
+  writeAxis("test2D_Yvar.tmp", yvar, "VAR")
+  writeData("test2D_data_var_p.tmp", data = z, mode = "POINT", "LINEAR", 
+            axisFiles = c("Rgridinterp/test2D_Xvar.tmp", "Rgridinterp/test2D_Yvar.tmp"))
+  
+  writeData("test2D_data_var_c.tmp", data = z[1:19,1:37], mode = "CELL", "LINEAR", 
+            axisFiles = c("Rgridinterp/test2D_Xvar.tmp", "Rgridinterp/test2D_Yvar.tmp"))
+}
+
+{# read the results
+  test2pl <- read.table("res_var_test2D_pl.tmp", header = F, col.names = c("X", "Y", "Z"))
+  test2pn <- read.table("res_var_test2D_pn.tmp", header = F, col.names = c("X", "Y", "Z"))
+  test2cl <- read.table("res_var_test2D_cl.tmp", header = F, col.names = c("X", "Y", "Z"))
+  test2cn <- read.table("res_var_test2D_cn.tmp", header = F, col.names = c("X", "Y", "Z"))
   
 }
 
 
 {
   p <- plot_ly()
-  p <- add_surface(p, x=x, y = y, z = P$Z)
+  p <- add_surface(p, x = xvar, y = yvar, z = z)
+  p <- add_markers(p, x = test2pl$X, y = test2pl$Y, z = test2pl$Z, marker = list(size = 1))
+  p <- add_markers(p, x = test2pn$X, y = test2pn$Y, z = test2pn$Z, marker = list(size = 1))
+  p <- add_markers(p, x = test2cl$X, y = test2cl$Y, z = test2cl$Z, marker = list(size = 1))
+  p <- add_markers(p, x = test2cn$X, y = test2cn$Y, z = test2cn$Z, marker = list(size = 1))
   p
   
 }
-
-
 
 
 ######### WRITE FUNCTIONS =======================
@@ -124,18 +172,18 @@ writeAxis <- function(filename, x, spacing){
 writeData <- function(filename, data, mode, method, axisFiles){
   if (is.null(dim(data))){
     write(paste(mode, method, length(data)), file = filename, append = F)
-    write(axisFiles, file = filename, append = T)
+    write(axisFiles, file = filename, append = T, ncolumns = length(axisFiles))
     write.table(data, file = filename, append = T, row.names = F, col.names = F)
   }
   else{
     if (length(dim(data)) == 2){
-      write(paste(mode, method, dim(data)[1], dim(data)[2]), file = filename, append = F)
-      write(axisFiles, file = filename, append = T)
+      write(paste(mode, method, dim(data)[2], dim(data)[1]), file = filename, append = F)
+      write(axisFiles, file = filename, append = T, ncolumns = length(axisFiles))
       write.table(data, file = filename, append = T, row.names = F, col.names = F)
     }
     else if (length(dim(data)) == 3){
-      write(paste(mode, method, dim(data)[1], dim(data)[2], dim(data)[3]), file = filename, append = F)
-      write(axisFiles, file = filename, append = T)
+      write(paste(mode, method, dim(data)[2], dim(data)[1], dim(data)[3]), file = filename, append = F)
+      write(axisFiles, file = filename, append = T, ncolumns = length(axisFiles))
       for (i in 1:dim(data)[3]) {
         write.table(data[,,i], file = filename, append = T, row.names = F, col.names = F)
       }
