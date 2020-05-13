@@ -77,7 +77,7 @@ namespace GRID_INTERP{
          * @param i2 is the id of the upper limit
          * @param t is the parametric value so that x_in = x[i1]*(1-t) + x[i2]*t
          */
-        void findIIT(double x_in, int &i1, int &i2, double &t);
+        void findIIT(double x_in, int &i1, int &i2, double &t)const;
         //! so far this is not used so I might delete this
         void findIcell(double x_in, int &i);
         /**
@@ -99,10 +99,10 @@ namespace GRID_INTERP{
         //! Delets all data and resest the axis object to its original state
         void reset();
         //! accessor for the i element of the axis
-        double& operator()(int i);
+        double operator()(int i)const;
         //! returns the index that access the last element of the tick values
         //! If ax is an axis object then ax(ax.last()) is equal to ax.x[ax.x.size()-1]
-        int last();
+        int last()const;
 
     private:
         //! is the vector that containts the tick values
@@ -116,7 +116,7 @@ namespace GRID_INTERP{
         //! This flag is set to true or false according to which setAxis method is used.
         bool bConst = false;
         //! Finds cell searches the segment that containts the x. Is doing so by dividing into half and repeating it self
-        void findCell(int &i, int &ii, double x);
+        void findCell(int &i, int &ii, const double x)const;
     };
 
     void axis::reset(){
@@ -126,10 +126,10 @@ namespace GRID_INTERP{
         bConst = false;
         N = 0;
     }
-    double& axis::operator()(int i){
+    double axis::operator()(int i)const{
         return x[i];
     }
-    int axis::last(){
+    int axis::last()const{
         return x.size()-1;
     }
 
@@ -149,7 +149,7 @@ namespace GRID_INTERP{
         N = x.size() - 1;
     }
 
-    void axis::findCell(int &i, int &ii, double x_in){
+    void axis::findCell(int &i, int &ii, double x_in)const{
         switch (bConst)
         {
         case true:
@@ -175,7 +175,7 @@ namespace GRID_INTERP{
         }
     }
 
-    void axis::findIIT(double x_in, int &i1, int &i2, double &t){
+    void axis::findIIT(double x_in, int &i1, int &i2, double &t)const{
         if (x_in < x[0]){
             i1 = 0;
             i2 = 0;
@@ -264,11 +264,11 @@ namespace GRID_INTERP{
         //! Empty constructor 
         GridValues(){};
         //! access operator in 3D 
-        double& operator()(int l, int r, int c);
+        double operator()(int l, int r, int c)const;
         //! access operator in 2D
-        double& operator()(int r, int c);
+        double operator()(int r, int c)const;
         //! access operator in 1D 
-        double& operator()(int c);
+        double operator()(int c)const;
         //! resize the data array. Unlike the usual usage of resize function in vector
         //! the resize will discard any existing data first 
         void resize(int nl, int nr, int nc);
@@ -277,22 +277,22 @@ namespace GRID_INTERP{
         //! Deletes the data of the object bringing it int the state to recieve otehr data
         void reset();
         //! returns the number of columns or values in the x direction
-        int nx();
+        int nx()const;
         //! returns the number of rows or values in the y direction
-        int ny();
+        int ny()const;
         //! returns the number of layers or values in the z direction
-        int nz();
+        int nz()const;
     private:
         std::vector<std::vector<std::vector<double>>> v;
     };
 
-    double& GridValues::operator()(int l, int r, int c){
+    double GridValues::operator()(int l, int r, int c)const{
         return v[l][r][c];
     }
-    double& GridValues::operator()(int r, int c){
+    double GridValues::operator()(int r, int c)const{
         return v[0][r][c];
     }
-    double& GridValues::operator()(int c){
+    double GridValues::operator()(int c)const{
         return v[0][0][c];
     }
     void GridValues::resize(int nl, int nr, int nc){
@@ -309,13 +309,13 @@ namespace GRID_INTERP{
         v.clear();
     }
 
-    int GridValues::nx(){
+    int GridValues::nx()const{
         return v[0][0].size();
     }
-    int GridValues::ny(){
+    int GridValues::ny()const{
         return v[0].size();
     }
-    int GridValues::nz(){
+    int GridValues::nz()const{
         return v.size();
     }
 
@@ -333,7 +333,7 @@ namespace GRID_INTERP{
         interp();
         //! This is the method to call to carry out the interpolation
         //! you have to pass as many coordinates are needed.
-        double interpolate(double x, double y = 0, double z = 0);
+        double interpolate(double x, double y = 0, double z = 0)const;
         /**
          * @brief Set the Axis object
          * 
@@ -396,15 +396,16 @@ namespace GRID_INTERP{
         //! THis holds the interpolation method
         METHOD method = METHOD::INVALID_METHOD;
         //! The interpolate method will call this when dim is 1
-        double interp1D(double x);
+        double interp1D(double x)const;
         //! The interpolate method will call this when dim is 2
-        double interp2D(double x, double y);
+        double interp2D(double x, double y)const;
         //! The interpolate method will call this when dim is 2
-        double interp3D(double x, double y, double z);
+        double interp3D(double x, double y, double z)const;
         //! A utility method which is used in MODE::CELL and METHOD::LINEAR
         //! Finds the correct cells to interpolate the value for the given input
-        void cellLinearcorrect(int idim, double x, int &i1, int &i2, double &x1, double &x2);
+        void cellLinearcorrect(int idim, double x, int &i1, int &i2, double &x1, double &x2)const;
     };
+
 
     template<int dim>
     interp<dim>::interp(){
@@ -531,7 +532,7 @@ namespace GRID_INTERP{
     }
 
     template<int dim>
-    double interp<dim>::interpolate(double x, double y, double z){
+    double interp<dim>::interpolate(double x, double y, double z)const{
         double outcome;
         switch (dim)
         {
@@ -552,11 +553,11 @@ namespace GRID_INTERP{
     }
 
     template<int dim>
-    double interp<dim>::interp1D(double x){
+    double interp<dim>::interp1D(double x)const{
         double outcome;
         int i1, i2;
         double t;
-        a[0].findIIT(x,i1, i2,t);
+        a[0].findIIT(x,i1, i2, t);
         
         switch (mode)
         {
@@ -608,7 +609,7 @@ namespace GRID_INTERP{
   
 
     template<int dim>
-    double interp<dim>::interp2D(double x, double y){
+    double interp<dim>::interp2D(double x, double y)const{
         double outcome;
         int i1, i2, j1, j2;
         double tx, ty;
@@ -690,7 +691,7 @@ namespace GRID_INTERP{
     }
 
     template<int dim>
-    double interp<dim>::interp3D(double x, double y, double z){
+    double interp<dim>::interp3D(double x, double y, double z)const{
         int i1, i2, j1, j2, k1, k2;
         double tx, ty, tz;
         a[0].findIIT(x, j1, j2, tx);
@@ -790,7 +791,7 @@ namespace GRID_INTERP{
     }
 
     template <int dim>
-    void interp<dim>::cellLinearcorrect(int idim, double x, int &i1, int &i2, double &x1, double &x2){
+    void interp<dim>::cellLinearcorrect(int idim, double x, int &i1, int &i2, double &x1, double &x2)const{
         double midx = 0.5*( a[idim](i1) + a[idim](i2) );
         if (x < a[idim](0)){
             i1 = 0;
