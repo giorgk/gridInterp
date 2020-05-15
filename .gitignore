@@ -5,6 +5,8 @@
 !LICENSE
 !*.md
 !*.dox
+!.gitignore
+!.codedocs
 
 !/Rgridinterp
 /Rgridinterp/*
