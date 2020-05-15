@@ -8,6 +8,10 @@ The library is designed to be used up to 3D.
 
 # Install
 There is really nothing to install. <br/>
+All you need is to clone the [repository](https://github.com/giorgk/gridInterp)
+```
+git clone https://github.com/giorgk/gridInterp.git
+```
 To use the library just add the following include in your code and you are good to go.
 ```
 #include "gridInterp.h"
