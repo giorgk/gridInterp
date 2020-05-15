@@ -2,6 +2,7 @@
 **gridInterp** is a header only c++ library that interpolates gridded formatted data.<br/> 
 If your data are organized in rows, columns and layers then gridInterp can be used to interpolate between the data.
 
+
 **IMPORTANT NOTE:**<br/>
 The library is designed to be used up to 3D. 
 
@@ -87,7 +88,9 @@ This interpolation type is implemented for 3D only.
 In groundwater modelling it is common to have layers with varying elevation. 
 
 
-
+# Documentation
+Detail documentation can be found [here](https://codedocs.xyz/giorgk/gridInterp/)<br/>
+[![Documentation](https://codedocs.xyz/giorgk/gridInterp.svg)](https://codedocs.xyz/giorgk/gridInterp/)
 
 
 
