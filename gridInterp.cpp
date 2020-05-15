@@ -9,12 +9,10 @@ using namespace std;
 
 int main()
 {
-    //GRID_INTERP::interp<2> interp;
-    //interp.print();
+
     
-    //test1D_const();
-    //test1D_var();
-    test2D_const();
+    test1D();
+    test2D();
 
     return 0;
 }

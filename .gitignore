@@ -4,9 +4,15 @@
 !*.h
 !LICENSE
 !*.md
+!*.dox
 
 !/Rgridinterp
 /Rgridinterp/*
 !/Rgridinterp/*.R
 !/Rgridinterp/*.Rproj
 
+.Rproj.user
+
+!/docs
+/docs/*
+!/docs/*.png
