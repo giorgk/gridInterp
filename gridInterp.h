@@ -651,8 +651,8 @@ namespace GRID_INTERP{
         int i1, i2, j1, j2, k1, k2;
         double tx, ty, tz;
         a[0].findIIT(x, j1, j2, tx);
-        a[1]. findIIT(y, i1, i2, ty);
-        a[2]. findIIT(z, k1, k2, tz);
+        a[1].findIIT(y, i1, i2, ty);
+        a[2].findIIT(z, k1, k2, tz);
         
         switch (method)
         {
@@ -690,7 +690,10 @@ namespace GRID_INTERP{
             }
             break;
         default:
-            break;
+            {
+                return -99999999.9;
+                break;
+            }
         }   
     }
 
