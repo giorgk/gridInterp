@@ -240,6 +240,7 @@ namespace GRID_INTERP{
                 }
                 N = x.size() - 1;
             }
+            datafile.close();
         }
     }
 
@@ -558,6 +559,7 @@ namespace GRID_INTERP{
                     }
             }
             setMethod(mthd);
+            datafile.close();
         }
     }
 
