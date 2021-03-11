@@ -182,13 +182,13 @@ namespace GRID_INTERP{
     }
 
     void axis::findIIT(double x_in, int &i1, int &i2, double &t)const{
-        if (x_in < x[0]){
+        if (x_in <= x[0]){
             i1 = 0;
             i2 = 0;
             t = 0.0;
             return;
         }
-        if (x_in > x[N]){
+        if (x_in >= x[N]){
             i1 = N;
             i2 = N;
             t = 1.0;
@@ -498,6 +498,14 @@ namespace GRID_INTERP{
             {// METHOD NX NY NZ
                 std::istringstream inp(line.c_str());
                 inp >> tmp;
+                if (tmp.compare("GRIDDED") == 0){
+                    // If the first line is GRIDDED ignore it and read the next line
+                    getline(datafile, line);
+                    inp.clear();
+                    inp.str(line.c_str());
+                    inp >> tmp;
+                }
+
                 if (tmp.compare("LINEAR") == 0)
                     mthd = METHOD::LINEAR;
                 else if (tmp.compare("NEAREST") == 0)
