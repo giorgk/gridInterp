@@ -45,21 +45,30 @@ To populate the data using code, first initialize the object
 ```
 GRID_INTERP::interp<2> twoDinterp;
 ```
-Then use either <br/>
+Then use either    
+```
 GRID_INTERP::interp<dim>::setAxis(int idim, double origin_in, double dx_in, int n)
-for evenly spaced data <br/> or <br/> 
+```
+for evenly spaced data or  
+```  
 GRID_INTERP::interp<dim>::setAxis(int idim, std::vector<double> &x_in)
-for variably spaced data. <br/>
+```
+for variably spaced data.    
 Repeat the above code for each axis.
 
-Next we can set data values using the method <br/>
+Next we can set data values using the method    
+```
 GRID_INTERP::interp<dim>::setValues(int l, int r, int c, double v_in)
-
-Last we can set the interpolation method using <br/>
+```
+Last we can set the interpolation method using    
+```
 GRID_INTERP::interp<dim>::setMethod(METHOD method_in)
+```
 
-The object is ready to be used for interpolation using the <br/>
-GRID_INTERP::interp<dim>::interpolate(double x, double y = 0, double z = 0) <br/>
+The object is ready to be used for interpolation using the     
+```
+GRID_INTERP::interp<dim>::interpolate(double x, double y = 0, double z = 0)
+```
 method e.g:
 ```
 twoDinterp.interpolate(30,5);
