@@ -5,6 +5,7 @@
 #include <sstream>
 #include <vector>
 #include <limits>
+#include <cmath>
 
 namespace GRID_INTERP{
 
@@ -435,6 +436,12 @@ namespace GRID_INTERP{
         //! A utility method which is used in MODE::CELL and METHOD::LINEAR
         //! Finds the correct cells to interpolate the value for the given input
         //void cellLinearcorrect(int idim, double x, int &i1, int &i2, double &x1, double &x2)const;
+        double translateX = 0.0;
+        double translateY = 0.0;
+        double rotate = 0.0;
+        double cosTH;
+        double sinTH;
+        bool bPreTransform = false;
     };
 
 
@@ -517,6 +524,20 @@ namespace GRID_INTERP{
                     inp >> d;
                     dims.push_back(d);
                 }
+
+                {// Attempt to read transformation parameters
+                    inp >> translateX;
+                    inp >> translateY;
+                    inp >> rotate;
+                    if (std::abs(translateX) > 0.000001 || std::abs(translateY) > 0.000001 || std::abs(rotate) > 0.000001){
+                        bPreTransform = true;
+                        // Calculate the rotation values
+                        double pi = 4*std::atan(1);
+                        cosTH = std::cos(rotate * pi/180.0);
+                        sinTH = std::sin(rotate * pi/180.0);
+                    }
+                }
+
                 if (dim == 1)
                     v.resize(1,1,dims[0]);
                 else if (dim == 2)
@@ -573,6 +594,12 @@ namespace GRID_INTERP{
 
     template<int dim>
     double interp<dim>::interpolate(double x, double y, double z)const{
+        if (bPreTransform){
+            x = x + translateX;
+            y = y + translateY;
+            x = x * cosTH - y * sinTH;
+            x = x * sinTH + y * cosTH;
+        }
         double outcome;
         switch (dim)
         {
